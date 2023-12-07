@@ -1,5 +1,5 @@
 ﻿using HarmonyLib;
-using BoomboxSyncFix.Shared;
+using System.Collections.Generic;
 
 namespace BoomboxSyncFix.Patches
 {
@@ -7,21 +7,23 @@ namespace BoomboxSyncFix.Patches
     [HarmonyPatch("StartMusic")]
     internal class BoomboxItemStartMusicPatch
     {
+        private static Dictionary<BoomboxItem, bool> seedSyncDictionary = new Dictionary<BoomboxItem, bool>();
 
-        public static void Prefix(ref StartOfRound ___playersManager, ref System.Random ___musicRandomizer)
+        public static void Prefix(BoomboxItem __instance, ref StartOfRound ___playersManager, ref System.Random ___musicRandomizer)
         {
-            BoomboxSyncFixPlugin.Instance.logger.LogInfo("In StartMusic()");
-
-            if (___playersManager.randomMapSeed != SharedDataContainer.lastKnownVariableValue)
+            if (!seedSyncDictionary.TryGetValue(__instance, out bool seedSynced) || !seedSynced)
             {
-                ___musicRandomizer = new System.Random(___playersManager.randomMapSeed - 10); //Reinitialize musicRandomizer to match the hosts randomMapSeed
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo("Musicrandomizer has been synced!");
+                BoomboxSyncFixPlugin.Instance.logger.LogInfo("In StartMusic()");
 
-                SharedDataContainer.lastKnownVariableValue = ___playersManager.randomMapSeed;
+                if (___playersManager.randomMapSeed > 0)
+                {
+                    ___musicRandomizer = new System.Random(___playersManager.randomMapSeed - 10);
+                    BoomboxSyncFixPlugin.Instance.logger.LogInfo("Musicrandomizer variable has been synced!");
+                    seedSyncDictionary[__instance] = true;
+                }
+
+                BoomboxSyncFixPlugin.Instance.logger.LogInfo(___playersManager.randomMapSeed - 10);
             }
-            BoomboxSyncFixPlugin.Instance.logger.LogInfo(___playersManager.randomMapSeed - 10);
-
         }
-
     }
 }
