@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("A mod to fix the base game bug of the Boombox not being synced between users.")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+018dffe7b008795e351d4ec90a84652a20dc80fb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+accfc046884dce467b62985d257f82ed10d02823")]
 [assembly: System.Reflection.AssemblyProductAttribute("BoomboxSyncFix")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BoomboxSyncFix")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

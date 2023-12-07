@@ -21,8 +21,6 @@ namespace BoomboxSyncFix.Patches
                     BoomboxSyncFixPlugin.Instance.logger.LogInfo("Musicrandomizer variable has been synced!");
                     seedSyncDictionary[__instance] = true;
                 }
-
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo(___playersManager.randomMapSeed - 10);
             }
         }
     }
