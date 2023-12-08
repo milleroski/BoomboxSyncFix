@@ -1,26 +1,31 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace BoomboxSyncFix.Patches
 {
     [HarmonyPatch(typeof(BoomboxItem))]
-    [HarmonyPatch("StartMusic")]
+    [HarmonyPatch("Update")]
     internal class BoomboxItemStartMusicPatch
     {
         private static Dictionary<BoomboxItem, bool> seedSyncDictionary = new Dictionary<BoomboxItem, bool>();
+        private static FieldInfo playersManagerField = AccessTools.Field(typeof(BoomboxItem), "playersManager");
 
-        public static void Prefix(BoomboxItem __instance, ref StartOfRound ___playersManager, ref System.Random ___musicRandomizer)
+        public static void Prefix(BoomboxItem __instance)
         {
             if (!seedSyncDictionary.TryGetValue(__instance, out bool seedSynced) || !seedSynced)
             {
+                StartOfRound playersManager = (StartOfRound)playersManagerField.GetValue(__instance);
                 BoomboxSyncFixPlugin.Instance.logger.LogInfo("In StartMusic()");
 
-                if (___playersManager.randomMapSeed > 0)
+                if (playersManager.randomMapSeed > 0)
                 {
-                    ___musicRandomizer = new System.Random(___playersManager.randomMapSeed - 10);
+                    __instance.musicRandomizer = new System.Random(playersManager.randomMapSeed - 10);
                     BoomboxSyncFixPlugin.Instance.logger.LogInfo("Musicrandomizer variable has been synced!");
                     seedSyncDictionary[__instance] = true;
                 }
+
+                BoomboxSyncFixPlugin.Instance.logger.LogInfo(playersManager.randomMapSeed);
             }
         }
     }
