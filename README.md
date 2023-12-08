@@ -1,2 +1,2 @@
-# LethalCompanyTemplate
-A template for a BepInEx 5 Plugin, using the correct .csproj configuration for Lethal Company modding
+# BoomboxSyncFix
+This mod fixes the weird desync that sometimes happens between the host and client, making them hear two different sobg from the same boombox.
