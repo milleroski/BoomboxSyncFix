@@ -1,11 +1,12 @@
-﻿using HarmonyLib;
+﻿using BoomboxSyncFix.Networking;
+using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine.UIElements;
 
 namespace BoomboxSyncFix.Patches
 {
-    [HarmonyPatch(typeof(BoomboxItem))]
-    [HarmonyPatch("StartMusic")]
+    [HarmonyPatch]
     internal class BoomboxItemStartMusicPatch
     {
         // Original variables to keep track of the seed syncing
@@ -16,7 +17,9 @@ namespace BoomboxSyncFix.Patches
         private static Dictionary<BoomboxItem, int> musicPlayAmount = new Dictionary<BoomboxItem, int>();
         private static Dictionary<BoomboxItem, bool> playAmountSyncDictionary = new Dictionary<BoomboxItem, bool>();
 
-        public static void Prefix(BoomboxItem __instance)
+        [HarmonyPatch(typeof(BoomboxItem), "StartMusic")]
+        [HarmonyPrefix]
+        public static void PatchStartMusic(BoomboxItem __instance)
         {
             StartOfRound playersManager = (StartOfRound)playersManagerField.GetValue(__instance);
 
@@ -71,6 +74,24 @@ namespace BoomboxSyncFix.Patches
                 // This boombox is synced by playAmount now, don't access this part of code anymore
                 playAmountSyncDictionary[__instance] = true;
             }
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(RoundManager), "GenerateNewLevelClientRpc")]
+        static void SubscribeToHandler()
+        {
+            BoomboxSyncFixPlugin.Instance.logger.LogInfo("Subscribed to server Handler!");
+            NetworkHandler.LevelEvent += ReceivedEventFromServer;
+        }
+
+        [HarmonyPostfix, HarmonyPatch(typeof(RoundManager), "DespawnPropsAtEndOfRound")]
+        static void UnsubscribeFromHandler()
+        {
+            NetworkHandler.LevelEvent -= ReceivedEventFromServer;
+        }
+
+        static void ReceivedEventFromServer(string eventName)
+        {
+            BoomboxSyncFixPlugin.Instance.logger.LogInfo($"HELLOOOOOOOOOOOO {eventName}");
         }
     }
 }

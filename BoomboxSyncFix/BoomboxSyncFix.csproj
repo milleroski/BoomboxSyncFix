@@ -34,6 +34,10 @@
       </Reference>
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="asset" />
+    </ItemGroup>
+
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
       <Exec Command="cd D:\Programming\LC_mods\NetcodePatcher&#xD;&#xA;NetcodePatcher.dll $(TargetDir) deps/" />
     </Target>
