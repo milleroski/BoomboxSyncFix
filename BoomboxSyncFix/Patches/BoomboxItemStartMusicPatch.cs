@@ -1,8 +1,8 @@
-﻿using BoomboxSyncFix.Networking;
-using HarmonyLib;
+﻿using HarmonyLib;
 using System.Collections.Generic;
 using System.Reflection;
-using UnityEngine.UIElements;
+using Unity.Netcode;
+
 
 namespace BoomboxSyncFix.Patches
 {
@@ -32,8 +32,9 @@ namespace BoomboxSyncFix.Patches
                     musicPlayAmount[__instance] = 0;
                 }
 
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo("Incrementing musicPlayAmount by 1");
                 musicPlayAmount[__instance] += 1;
+
+                BoomboxSyncFixPlugin.Instance.logger.LogInfo("Incrementing musicPlayAmount by 1");
                 BoomboxSyncFixPlugin.Instance.logger.LogInfo("PlayAmount:");
                 BoomboxSyncFixPlugin.Instance.logger.LogInfo(musicPlayAmount[__instance]);
             }
@@ -52,7 +53,7 @@ namespace BoomboxSyncFix.Patches
             }
 
             // If the playAmount has not been synced yet and ONLY if this is the client.
-            if ((!playAmountSyncDictionary.TryGetValue(__instance, out bool playAmountSynced) || !playAmountSynced) && !playersManager.IsHost)
+            if ((!playAmountSyncDictionary.TryGetValue(__instance, out bool playAmountSynced) || !playAmountSynced) && !NetworkManager.Singleton.IsHost)
             {
                 BoomboxSyncFixPlugin.Instance.logger.LogInfo("Got in the playamountsync part.");
 
@@ -76,22 +77,5 @@ namespace BoomboxSyncFix.Patches
             }
         }
 
-        [HarmonyPostfix, HarmonyPatch(typeof(RoundManager), "GenerateNewLevelClientRpc")]
-        static void SubscribeToHandler()
-        {
-            BoomboxSyncFixPlugin.Instance.logger.LogInfo("Subscribed to server Handler!");
-            NetworkHandler.LevelEvent += ReceivedEventFromServer;
-        }
-
-        [HarmonyPostfix, HarmonyPatch(typeof(RoundManager), "DespawnPropsAtEndOfRound")]
-        static void UnsubscribeFromHandler()
-        {
-            NetworkHandler.LevelEvent -= ReceivedEventFromServer;
-        }
-
-        static void ReceivedEventFromServer(string eventName)
-        {
-            BoomboxSyncFixPlugin.Instance.logger.LogInfo($"HELLOOOOOOOOOOOO {eventName}");
-        }
     }
 }
