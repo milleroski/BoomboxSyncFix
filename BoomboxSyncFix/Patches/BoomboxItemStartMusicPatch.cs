@@ -1,39 +1,22 @@
 ﻿using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace BoomboxSyncFix.Patches
 {
-    [HarmonyPatch(typeof(BoomboxItem))]
-    [HarmonyPatch("StartMusic")]
+    [HarmonyPatch]
     internal class BoomboxItemStartMusicPatch
     {
-        // Original variables to keep track of the seed syncing
+        // Variables to keep track of the seed syncing across multiple BoomboxItem instances
         private static Dictionary<BoomboxItem, bool> seedSyncDictionary = new Dictionary<BoomboxItem, bool>();
         private static FieldInfo playersManagerField = AccessTools.Field(typeof(BoomboxItem), "playersManager");
 
-        // Edge case variables for Late join mods
-        private static Dictionary<BoomboxItem, int> musicPlayAmount = new Dictionary<BoomboxItem, int>();
-        private static Dictionary<BoomboxItem, bool> playAmountSyncDictionary = new Dictionary<BoomboxItem, bool>();
-
-        public static void Prefix(BoomboxItem __instance)
+        [HarmonyPatch(typeof(BoomboxItem), "StartMusic")]
+        [HarmonyPrefix]
+        public static void StartMusicPatch(BoomboxItem __instance)
         {
             StartOfRound playersManager = (StartOfRound)playersManagerField.GetValue(__instance);
-
-            // The host needs to be keeping track of all the boomboxes being played and how often they get played, since they're always around.
-            if (__instance.isPlayingMusic == false)
-            {
-                // If the Dictionary was not initialized yet, do so
-                if (!musicPlayAmount.ContainsKey(__instance))
-                {
-                    musicPlayAmount[__instance] = 0;
-                }
-
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo("Incrementing musicPlayAmount by 1");
-                musicPlayAmount[__instance] += 1;
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo("PlayAmount:");
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo(musicPlayAmount[__instance]);
-            }
 
             // If the seed has not been synced yet for the musicRandomizer
             if (!seedSyncDictionary.TryGetValue(__instance, out bool seedSynced) || !seedSynced)
@@ -47,29 +30,33 @@ namespace BoomboxSyncFix.Patches
                     seedSyncDictionary[__instance] = true;
                 }
             }
+        }
 
-            // If the playAmount has not been synced yet and ONLY if this is the client.
-            if ((!playAmountSyncDictionary.TryGetValue(__instance, out bool playAmountSynced) || !playAmountSynced) && !playersManager.IsHost)
+        // This happens only in the case that a "late join" mod is uses like LateCompany or ShipLobby -- you can't use the boombox before you start the game normally
+        [HarmonyPatch(typeof(StartOfRound), "OnPlayerConnectedClientRpc")]
+        [HarmonyPrefix]
+        public static void OnPlayerConnectedPatch(StartOfRound __instance)
+        {
+            BoomboxSyncFixPlugin.Instance.logger.LogInfo($"Another client joined -- forcing everyone to reintialize musicRandomizer.");
+            forceReinitialize(seedSyncDictionary);
+
+        }
+
+        // This is for a weird edge case when the host starts playing the boombox before the game has loaded in -- this makes sure everyone gets resynced when the level has loaded in.
+        [HarmonyPatch(typeof(StartOfRound), "openingDoorsSequence")]
+        [HarmonyPrefix]
+        public static void openingDoorsSequencePatch(StartOfRound __instance)
+        {
+            BoomboxSyncFixPlugin.Instance.logger.LogInfo($"Round has loaded for all -- forcing everyone to reinitialize musicRandomizer.");
+            forceReinitialize(seedSyncDictionary);
+        }
+
+        private static void forceReinitialize(Dictionary<BoomboxItem, bool> seedSyncDictionary)
+        {
+            // Reset playAmountSyncDictionary for all BoomboxItem instances
+            foreach (var boomboxItem in seedSyncDictionary.Keys.ToList())
             {
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo("Got in the playamountsync part.");
-
-                BoomboxSyncFixPlugin.Instance.logger.LogInfo(musicPlayAmount[__instance]);
-
-                // Only do this if the client joined late, a.k.a. when the host has played the song AT LEAST ONCE
-                if (musicPlayAmount[__instance] > 1)
-                {
-                    BoomboxSyncFixPlugin.Instance.logger.LogInfo("Entering the for loop...");
-
-                    // Run musicRandomizer.Next the amount of times that the host has played the boombox
-                    for (int i = 0; i < musicPlayAmount[__instance]; i++)
-                    {
-                        BoomboxSyncFixPlugin.Instance.logger.LogInfo($"{i}");
-                        __instance.musicRandomizer.Next();
-                    }
-                }
-
-                // This boombox is synced by playAmount now, don't access this part of code anymore
-                playAmountSyncDictionary[__instance] = true;
+                seedSyncDictionary[boomboxItem] = false;
             }
         }
     }
