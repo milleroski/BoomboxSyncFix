@@ -14,7 +14,6 @@ Keep your attention on the musicRandomizer variable, which is, as the name sugge
 ![StartMusicMethod](https://github.com/milleroski/BoomboxSyncFix/assets/58141168/4e6b8893-48f5-4eba-b233-a2e7d3bb539c)
 
 Specifically, take note of the fact that the musicRandomizer gets only assigned ONCE, and then it stays like that for the rest of the game lobby. Now, here's the root cause of this: The randomMapSeed is not the same between the client and the host at the moment the BoomboxItem Start() method gets run.
-Take note of the fact that the musicRandomizer gets only assigned ONCE, and then it stays like that for the rest of the game lobby. Now, here's the root cause of this: The randomMapSeed is not the same between the client and the host at the moment the BoomboxItem Start() method gets run.
 
 ### Why isn't the randomMapSeed the same between the client and the host?
 It has to do with the way Lethal Company handles a client connecting to the game. Basically, from the clients side, it loads the boombox object and initializes the playersManager class at the same time. This is fine, however, the variables inside of playersManager, like the randomMapSeed do not get synced immediately with the server, it actually takes a bit of time (like half a second or so) to actually get the information from the server. In this small time gap the following happens -- the musicRandomizer for the client gets initialized with the following statement:
