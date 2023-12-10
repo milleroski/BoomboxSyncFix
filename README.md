@@ -2,7 +2,7 @@
 
 ## What is this bug, exactly?
 
-The way the boombox is usually supposed to behave is that whenever you buy it, every song that the host hears can also be heard by every client, which means that the boomboxes are synced between them. However, if you buy a boombox, leave the lobby, initiate a game where the boombox IS STILL IN THE SHIP, then the bug happens. Suddenly, as soon as you land your ship somewhere, the host hears a different song from the clients, which means, that somehow they got desynced, and will remain so for the rest of the game, until you buy a new boombox which will be synced again.
+The way the boombox is supposed to behave is that whenever you buy it, every song that the host hears can also be heard by every client, which means that the boomboxes are synced between them. However, if you buy a boombox, leave the lobby, initiate a game where the boombox IS STILL IN THE SHIP, then the bug happens. Suddenly, as soon as you land your ship somewhere, the host hears a different song from the clients, which means, that somehow they got desynced, and will remain so for the rest of the game, until you buy a new boombox which will be synced again.
 
 ## What causes this bug?
 It has to do with how the game handles the randomization of the boombox songs. Whenever you load into a game, the Object BoomboxItem gets created through this Start() method:
